@@ -1,8 +1,8 @@
 const { getRecordById, createRecords } = require('./_lib/airtable');
-const { TABLES, ENTRIES, JOBS, ENTRY_TYPES, ENTRY_STATUSES, EMAIL_DIRECTIONS, CATEGORY_CHOICES } = require('./_lib/schema');
+const { TABLES, ENTRIES, JOBS, RECORD_ID_RE, ENTRY_TYPES, ENTRY_STATUSES, EMAIL_DIRECTIONS, CATEGORY_CHOICES } = require('./_lib/schema');
 const { splitJobNameNo, mapEntry } = require('./_lib/mappers');
 
-const RECORD_ID_RE = /^rec[A-Za-z0-9]{14,}$/;
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -44,8 +44,8 @@ module.exports = async function handler(req, res) {
     res.status(400).json({ error: 'Invalid Status.' });
     return;
   }
-  if (type !== 'Project Note' && !date) {
-    res.status(400).json({ error: 'Entry Date is required for this Type.' });
+  if (type !== 'Project Note' && !ISO_DATE_RE.test(date || '')) {
+    res.status(400).json({ error: 'A valid Entry Date is required for this Type.' });
     return;
   }
   if (type === 'Project Note' && !(title && String(title).trim())) {

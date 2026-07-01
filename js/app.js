@@ -68,7 +68,10 @@ async function handleSelectJob(job) {
 }
 
 async function handleToggleTask(task, isChecked) {
-  const original = { ...task };
+  // Snapshot only the fields this action touches — reverting the whole task
+  // would clobber any other field (dueDate, assignedTo, ...) that changed
+  // out from under it between the optimistic patch and a failed PATCH.
+  const originalPatch = { complete: task.complete, dateDone: task.dateDone, completedById: task.completedById };
   const patch = isChecked
     ? { complete: 'Done', dateDone: todayISO(), completedById: state.author.recordId }
     : { complete: 'Open', dateDone: null, completedById: null };
@@ -84,7 +87,7 @@ async function handleToggleTask(task, isChecked) {
     });
     patchTask(task.id, updated);
   } catch {
-    patchTask(task.id, original);
+    patchTask(task.id, originalPatch);
     toast('Task update failed.');
   }
 }
@@ -111,19 +114,34 @@ function handleComposeSubmit(result) {
 function proceedWithAuthor(author) {
   state.author = author;
   renderTopbarUser();
-  loadJobs();
 }
 
+// Fetches jobs and renders the sidebar. Returns whether it succeeded so the
+// caller can fold the result into the single, centrally-decided connection
+// status instead of each loader flipping the dot independently (which would
+// race when staff and jobs load concurrently at boot).
 async function loadJobs() {
   try {
     const jobs = await getJobs();
     state.jobs = jobs;
     setJobs(jobs);
-    setConnectionStatus('live');
-  } catch (err) {
-    setSidebarError('Could not load jobs. Refresh to try again.', loadJobs);
-    setConnectionStatus('error');
+    return true;
+  } catch {
+    setSidebarError('Could not load jobs. Refresh to try again.', retryLoadJobs);
+    return false;
   }
+}
+
+async function retryLoadJobs() {
+  const ok = await loadJobs();
+  setConnectionStatus(ok ? 'live' : 'error');
+}
+
+async function loadStaff() {
+  const staff = await getStaff();
+  state.staff = staff;
+  state.staffById = new Map(staff.map((s) => [s.id, s]));
+  setStaffMap(state.staffById);
 }
 
 async function init() {
@@ -144,16 +162,21 @@ async function init() {
     window.location.reload();
   });
 
-  try {
-    const staff = await getStaff();
-    state.staff = staff;
-    state.staffById = new Map(staff.map((s) => [s.id, s]));
-    setStaffMap(state.staffById);
-  } catch (err) {
+  // Staff and jobs come from independent Airtable tables — load them
+  // concurrently instead of gating the jobs fetch behind staff/author
+  // resolution.
+  const [staffOk, jobsOk] = await Promise.all([
+    loadStaff().then(() => true).catch(() => false),
+    loadJobs(),
+  ]);
+
+  if (!staffOk) {
     setConnectionStatus('error');
     setSidebarError('Could not load staff. Refresh to try again.', init);
     return;
   }
+
+  setConnectionStatus(jobsOk ? 'live' : 'error');
 
   const existingAuthor = getAuthor();
   if (existingAuthor) {

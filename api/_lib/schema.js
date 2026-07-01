@@ -65,6 +65,8 @@ const STAFF = {
   // must never be requested from the Staff table.
 };
 
+const RECORD_ID_RE = /^rec[A-Za-z0-9]{14,}$/;
+
 const ENTRY_TYPES = ['Daily Activity', 'Work Plan', 'Email', 'Meeting Notes', 'Project Note'];
 const ENTRY_STATUSES = ['General', 'Important', 'Archived'];
 const EMAIL_DIRECTIONS = ['Incoming', 'Outgoing'];
@@ -86,6 +88,7 @@ module.exports = {
   TASKS,
   JOBS,
   STAFF,
+  RECORD_ID_RE,
   ENTRY_TYPES,
   ENTRY_STATUSES,
   EMAIL_DIRECTIONS,

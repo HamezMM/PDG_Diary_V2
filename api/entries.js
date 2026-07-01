@@ -1,8 +1,6 @@
 const { listAllRecords, getRecordsByIds } = require('./_lib/airtable');
-const { TABLES, ENTRIES } = require('./_lib/schema');
+const { TABLES, ENTRIES, RECORD_ID_RE } = require('./_lib/schema');
 const { mapEntry, mapTask } = require('./_lib/mappers');
-
-const RECORD_ID_RE = /^rec[A-Za-z0-9]{14,}$/;
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {

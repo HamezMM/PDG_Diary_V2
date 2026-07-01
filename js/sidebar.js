@@ -100,9 +100,13 @@ function renderJobList() {
 export function initSidebar({ onSelectJob }) {
   onSelectJobCb = onSelectJob;
 
+  let searchDebounce;
   searchEl.addEventListener('input', () => {
-    searchText = searchEl.value;
-    renderJobList();
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      searchText = searchEl.value;
+      renderJobList();
+    }, 120);
   });
 
   chipsEl.addEventListener('click', (evt) => {

@@ -1,8 +1,6 @@
 const { createRecords, updateRecord } = require('./_lib/airtable');
-const { TABLES, TASKS, TASK_STATUSES } = require('./_lib/schema');
+const { TABLES, TASKS, TASK_STATUSES, RECORD_ID_RE } = require('./_lib/schema');
 const { mapTask } = require('./_lib/mappers');
-
-const RECORD_ID_RE = /^rec[A-Za-z0-9]{14,}$/;
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -51,19 +49,17 @@ async function handleUpdate(req, res) {
     res.status(400).json({ error: 'A valid recordId is required.' });
     return;
   }
-  if (complete && !TASK_STATUSES.includes(complete)) {
-    res.status(400).json({ error: 'Invalid Complete value.' });
+  if (!TASK_STATUSES.includes(complete)) {
+    res.status(400).json({ error: 'A valid Complete value (Open or Done) is required.' });
     return;
   }
 
   try {
-    const fields = {};
+    const fields = { [TASKS.COMPLETE]: complete };
     if (complete === 'Done') {
-      fields[TASKS.COMPLETE] = 'Done';
       fields[TASKS.DATE_DONE] = dateDone || todayISO();
       fields[TASKS.COMPLETED_BY] = RECORD_ID_RE.test(completedBy || '') ? [completedBy] : [];
-    } else if (complete === 'Open') {
-      fields[TASKS.COMPLETE] = 'Open';
+    } else {
       fields[TASKS.DATE_DONE] = null;
       fields[TASKS.COMPLETED_BY] = [];
     }

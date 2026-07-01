@@ -66,26 +66,28 @@ async function listAllRecords(tableId, { fields, pageSize = 100 } = {}) {
 }
 
 // Fetches a fixed set of records by id via RECORD_ID() OR-formula, chunked
-// to keep each filterByFormula string short.
+// to keep each filterByFormula string short. Chunks are independent, so they
+// fire concurrently rather than one round-trip at a time.
 async function getRecordsByIds(tableId, ids) {
   if (!ids.length) return [];
   const { baseId } = getConfig();
   const chunkSize = 40;
-  const results = [];
-
+  const chunks = [];
   for (let i = 0; i < ids.length; i += chunkSize) {
-    const chunk = ids.slice(i, i + chunkSize);
+    chunks.push(ids.slice(i, i + chunkSize));
+  }
+
+  const pages = await Promise.all(chunks.map((chunk) => {
     const formula = `OR(${chunk.map((id) => `RECORD_ID()="${id}"`).join(',')})`;
     const params = new URLSearchParams({
       filterByFormula: formula,
       returnFieldsByFieldId: 'true',
       pageSize: '100',
     });
-    const data = await airtableFetch(`/${baseId}/${tableId}?${params.toString()}`);
-    results.push(...(data.records || []));
-  }
+    return airtableFetch(`/${baseId}/${tableId}?${params.toString()}`);
+  }));
 
-  return results;
+  return pages.flatMap((data) => data.records || []);
 }
 
 async function getRecordById(tableId, recordId) {
@@ -98,21 +100,29 @@ async function getRecordById(tableId, recordId) {
   }
 }
 
+// Airtable's create/update endpoints return `fields` keyed by field NAME —
+// returnFieldsByFieldId only affects GET/list responses — but every mapper
+// in mappers.js indexes by field ID. Refetch by id so callers always get the
+// same ID-keyed shape regardless of which operation produced the record.
 async function createRecords(tableId, records) {
   const { baseId } = getConfig();
   const data = await airtableFetch(`/${baseId}/${tableId}`, {
     method: 'POST',
     body: JSON.stringify({ records }),
   });
-  return data.records;
+  const ids = data.records.map((r) => r.id);
+  const refetched = await getRecordsByIds(tableId, ids);
+  const byId = new Map(refetched.map((r) => [r.id, r]));
+  return ids.map((id) => byId.get(id));
 }
 
 async function updateRecord(tableId, recordId, fields) {
   const { baseId } = getConfig();
-  return airtableFetch(`/${baseId}/${tableId}/${recordId}`, {
+  await airtableFetch(`/${baseId}/${tableId}/${recordId}`, {
     method: 'PATCH',
     body: JSON.stringify({ fields }),
   });
+  return getRecordById(tableId, recordId);
 }
 
 module.exports = {
