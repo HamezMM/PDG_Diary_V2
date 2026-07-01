@@ -1,0 +1,9 @@
+{
+  "name": "pdg-project-diary",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Peake Design Group — global daily project diary (V1 POC).",
+  "engines": {
+    "node": ">=20"
+  }
+}
