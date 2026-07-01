@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PDG · Project Diary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">PDG</span>
+      <span class="topbar-divider">·</span>
+      <span class="topbar-title">PROJECT DIARY</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user" hidden>
+        <span id="topbar-user-name"></span>
+        <button type="button" id="topbar-switch" class="link-btn">Switch</button>
+      </span>
+      <span class="status-dot" id="connection-status" data-state="loading" title="Connecting…"></span>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <aside class="sidebar">
+      <div class="sidebar-search">
+        <input type="text" id="job-search" placeholder="Search jobs…" autocomplete="off" />
+      </div>
+      <div class="filter-chips" id="prjt-status-chips" role="tablist" aria-label="Filter by project status">
+        <button type="button" class="chip is-active" data-value="ALL">ALL</button>
+        <button type="button" class="chip" data-value="ACTIVE">ACTIVE</button>
+        <button type="button" class="chip" data-value="PENDING">PENDING</button>
+        <button type="button" class="chip" data-value="STANDBY">STANDBY</button>
+        <button type="button" class="chip" data-value="CLOSED">CLOSED</button>
+      </div>
+      <div class="job-list" id="job-list">
+        <div class="sidebar-msg">Loading jobs…</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div id="project-header" class="project-header" hidden></div>
+
+      <div class="stream-wrap">
+        <div class="stream-filter-bar" id="entry-type-chips" hidden role="tablist" aria-label="Filter by entry type">
+          <button type="button" class="chip is-active" data-value="ALL">ALL</button>
+          <button type="button" class="chip" data-value="Daily Activity">DAILY ACTIVITY</button>
+          <button type="button" class="chip" data-value="Work Plan">WORK PLAN</button>
+          <button type="button" class="chip" data-value="Email">EMAIL</button>
+          <button type="button" class="chip" data-value="Meeting Notes">MEETING NOTES</button>
+          <button type="button" class="chip" data-value="Project Note">PROJECT NOTE</button>
+        </div>
+
+        <div class="stream" id="stream">
+          <div class="stream-empty">Select a project from the sidebar to view its diary.</div>
+        </div>
+      </div>
+
+      <button type="button" id="compose-btn" class="compose-btn" hidden>+ New Entry</button>
+    </main>
+
+  </div>
+
+</div>
+
+<div id="staff-picker" class="overlay" hidden>
+  <div class="overlay-panel staff-picker-panel">
+    <h1 class="overlay-title">Who's logging in?</h1>
+    <p class="overlay-subtitle">Pick your name to continue.</p>
+    <div class="staff-grid" id="staff-grid"></div>
+  </div>
+</div>
+
+<div id="compose-modal" class="overlay" hidden>
+  <div class="overlay-panel compose-panel">
+    <div class="compose-header">
+      <h1 class="overlay-title">New Entry</h1>
+      <button type="button" id="compose-close" class="icon-btn" aria-label="Close">&times;</button>
+    </div>
+    <form id="compose-form" class="compose-form"></form>
+  </div>
+</div>
+
+<div class="toast-stack" id="toast-stack"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
